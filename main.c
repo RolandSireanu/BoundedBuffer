@@ -1,19 +1,20 @@
 #define _GNU_SOURCE
 #include <stdlib.h>
 #include <unistd.h>
+#include <time.h>
 #include <stdio.h>
 #include <pthread.h>
 #include "bounded_buffer.h"
 
 void* producer(void* arg)
 {
-    pthread_setname_np("producer");
+    pthread_setname_np(pthread_self(), "producer");
     bounded_buffer_t* buffer = (bounded_buffer_t*)arg;
-    int lValue = 5;
+    int lValue = rand() % 100;
     while(true)
     {
         printf("Sent to bounded buffer %d\n", lValue);
-        bb_enqueue(buffer, &lValue);
+        bb_enqueue(buffer, (void*)(intptr_t)lValue);
     }
 
     return NULL;
@@ -21,12 +22,12 @@ void* producer(void* arg)
 
 void* consumer(void* arg)
 {
-    pthread_setname_np("consumer");
+    pthread_setname_np(pthread_self(), "consumer");
     bounded_buffer_t* buffer = (bounded_buffer_t*)arg;
     while(true)
     {
-        void* ptr = bb_dequeue(buffer);
-        printf("Got from bounded buffer %d\n", *(int*)ptr);
+        int result = (int)(intptr_t)bb_dequeue(buffer);
+        printf("Got from bounded buffer %d\n", result);
     }
 
     return NULL;
@@ -34,18 +35,19 @@ void* consumer(void* arg)
 
 int main()
 {
-    bounded_buffer_t* boundedBuffer = bb_create(32);
-    const size_t NR_OF_PRODUCERS = 4;
-    const size_t NR_OF_CONSUMERS = 8;
+    srand(time(NULL));
+    bounded_buffer_t* boundedBuffer = bb_create(128);
+    const size_t NR_OF_PRODUCERS = 10;
+    const size_t NR_OF_CONSUMERS = 10;
     pthread_t* producers = malloc(sizeof(pthread_t) * NR_OF_PRODUCERS);
     pthread_t* consumers = malloc(sizeof(pthread_t) * NR_OF_CONSUMERS);
 
-    for(size_t i=0; i<NR_OF_CONSUMERS; ++i)
+    for(size_t i=0; i<NR_OF_PRODUCERS; ++i)
     {
         pthread_create(&producers[i], NULL, producer, (void*)boundedBuffer);
     }
 
-    for(size_t i=0; i<NR_OF_PRODUCERS; ++i)
+    for(size_t i=0; i<NR_OF_CONSUMERS; ++i)
     {
         pthread_create(&consumers[i], NULL, consumer, (void*)boundedBuffer);    
     }

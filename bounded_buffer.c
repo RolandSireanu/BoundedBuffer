@@ -20,7 +20,7 @@ struct bounded_buffer {
 bounded_buffer_t* bb_create(size_t capacity)
 {
     bounded_buffer_t* lBoundedBuffer = malloc(sizeof(bounded_buffer_t));
-    lBoundedBuffer->capacity = 0;
+    lBoundedBuffer->capacity = capacity;
     lBoundedBuffer->head = 0;
     lBoundedBuffer->tail = 0;
     lBoundedBuffer->count = 0;
